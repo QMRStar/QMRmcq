@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>QMRSmcq | من الملف إلى الاختبار الوزاري</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg-1:#eaf7f3; --bg-2:#eef0fb; --bg-3:#fbf3e6;
+    --ink:#0a2e2a; --ink-soft:#4a655f;
+    --glass:rgba(255,255,255,.48); --glass-strong:rgba(255,255,255,.74); --glass-border:rgba(255,255,255,.9);
+    --teal:#0d9488; --teal-deep:#0a6f66; --indigo:#6a63d1; --gold:#d4a24c; --gold-deep:#b5822f;
+    --rose:#dd5f7c; --green:#1e9e6e;
+    --shadow: 0 8px 28px rgba(10,46,42,.10); --shadow-lg: 0 24px 64px rgba(10,46,42,.16);
+    --radius-lg:26px; --radius-md:18px; --radius-sm:13px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Almarai', sans-serif; color:var(--ink); min-height:100vh;
+    background:radial-gradient(1000px 620px at 12% -8%, var(--bg-3) 0%, transparent 58%),
+      radial-gradient(1000px 760px at 105% 6%, var(--bg-2) 0%, transparent 55%),
+      linear-gradient(165deg, var(--bg-1), #ffffff 62%);
+    background-attachment:fixed; overflow-x:hidden;}
+  ::selection{background:rgba(13,148,136,.25);}
+  .wrap{max-width:920px; margin:0 auto; padding:20px 16px 90px;}
+
+  header.top{display:flex; align-items:center; justify-content:space-between; padding:4px 2px 18px; gap:8px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{width:40px; height:40px; border-radius:13px; position:relative; flex:none;
+    background:linear-gradient(135deg, var(--teal), var(--indigo)); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px rgba(13,148,136,.35);}
+  .brand-mark svg{width:21px; height:21px;}
+  .brand-name{font-family:'Cairo'; font-weight:900; font-size:19px;}
+  .brand-name b{color:var(--teal-deep);}
+  .brand-sub{font-size:10.5px; color:var(--ink-soft); margin-top:-2px; font-weight:700;}
+
+  .status-pill{display:flex; align-items:center; gap:6px; padding:7px 13px; border-radius:100px;
+    background:var(--glass-strong); border:1px solid var(--glass-border); font-size:11.5px; font-weight:800;
+    box-shadow:var(--shadow); cursor:pointer; white-space:nowrap;}
+  .status-pill.pro{background:linear-gradient(120deg, rgba(212,162,76,.18), rgba(212,162,76,.06)); border-color:rgba(212,162,76,.4); color:var(--gold-deep);}
+  .status-dot{width:7px; height:7px; border-radius:50%; background:var(--teal);}
+  .status-pill.pro .status-dot{background:var(--gold);}
+
+  .hero{position:relative; border-radius:var(--radius-lg); padding:38px 26px 30px; background:var(--glass);
+    border:1px solid var(--glass-border); backdrop-filter:blur(24px) saturate(170%); -webkit-backdrop-filter:blur(24px) saturate(170%);
+    box-shadow:var(--shadow-lg); overflow:hidden; margin-bottom:20px;}
+  .hero::before{content:""; position:absolute; inset:-2px;
+    background:radial-gradient(520px 280px at 88% -12%, rgba(106,99,209,.22), transparent 60%); pointer-events:none;}
+  .hero-badge{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800; color:var(--teal-deep);
+    background:rgba(13,148,136,.1); padding:6px 12px; border-radius:100px; margin-bottom:14px; position:relative; z-index:1;}
+  .hero h1{font-family:'Cairo'; font-weight:900; font-size:clamp(24px,5.2vw,33px); margin:0 0 10px; line-height:1.4; position:relative; z-index:1;}
+  .hero h1 span{background:linear-gradient(90deg, var(--teal-deep), var(--indigo)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .hero p{color:var(--ink-soft); font-size:14.5px; line-height:1.95; max-width:64ch; margin:0 0 6px; position:relative; z-index:1;}
+  .pulse{position:relative; height:40px; margin-top:14px;}
+  .pulse svg{width:100%; height:100%; display:block;}
+  .pulse path{fill:none; stroke:url(#pulseGrad); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:340; stroke-dashoffset:340; animation:draw 2.8s ease-in-out infinite;}
+  @keyframes draw{0%{stroke-dashoffset:340;} 55%{stroke-dashoffset:0;} 100%{stroke-dashoffset:-340;}}
+
+  .card{border-radius:var(--radius-lg); background:var(--glass-strong); border:1px solid var(--glass-border);
+    backdrop-filter:blur(20px) saturate(160%); -webkit-backdrop-filter:blur(20px) saturate(160%);
+    box-shadow:var(--shadow); padding:22px; margin-bottom:16px;}
+  .card h2{font-family:'Cairo'; font-weight:800; font-size:16.5px; margin:0 0 4px;}
+  .card .hint{color:var(--ink-soft); font-size:12.5px; margin:0 0 16px; line-height:1.8;}
+  .step-badge{display:inline-flex; align-items:center; justify-content:center; width:23px; height:23px; border-radius:8px;
+    font-size:11.5px; font-weight:800; background:linear-gradient(135deg, var(--teal), var(--indigo)); color:#fff; margin-left:8px; font-family:'Cairo';}
+
+  .drop{border:1.6px dashed rgba(13,148,136,.4); border-radius:var(--radius-md); padding:28px 16px; text-align:center;
+    background:rgba(255,255,255,.35); transition:.25s; cursor:pointer;}
+  .drop.drag{background:rgba(13,148,136,.09); border-color:var(--teal);}
+  .drop svg{width:34px; height:34px; color:var(--teal); margin-bottom:8px;}
+  .drop .t1{font-weight:800; font-size:14.5px; font-family:'Cairo';}
+  .drop .t2{font-size:12px; color:var(--ink-soft); margin-top:4px;}
+  input[type=file]{display:none;}
+  .filepill{display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(13,148,136,.09);
+    border:1px solid rgba(13,148,136,.25); border-radius:var(--radius-sm); padding:10px 14px; margin-top:12px; font-size:13px;}
+  .filepill button{background:none; border:none; color:var(--rose); font-size:12px; cursor:pointer; font-family:'Almarai'; font-weight:800;}
+  textarea.pastebox{width:100%; min-height:105px; border-radius:var(--radius-sm); border:1px solid rgba(10,46,42,.12);
+    padding:12px 14px; font-family:'Almarai'; font-size:13.5px; resize:vertical; background:rgba(255,255,255,.6); margin-top:10px;}
+  .or-divider{display:flex; align-items:center; gap:10px; margin:14px 0 4px; color:var(--ink-soft); font-size:12px; font-weight:700;}
+  .or-divider::before, .or-divider::after{content:""; flex:1; height:1px; background:rgba(10,46,42,.12);}
+
+  .count-row{display:flex; gap:9px; flex-wrap:wrap;}
+  .count-chip{padding:10px 17px; border-radius:var(--radius-sm); font-weight:800; font-family:'Cairo'; font-size:14px;
+    background:rgba(255,255,255,.55); border:1px solid rgba(10,46,42,.12); cursor:pointer; transition:.18s; color:var(--ink);}
+  .count-chip.active{background:linear-gradient(135deg, var(--teal), var(--teal-deep)); color:#fff; border-color:transparent;
+    box-shadow:0 8px 20px rgba(13,148,136,.32); transform:translateY(-1px);}
+
+  .btn-primary{width:100%; padding:15px; border:none; border-radius:16px; cursor:pointer; font-family:'Cairo'; font-weight:800;
+    font-size:15.5px; color:#fff; background:linear-gradient(135deg, var(--teal), var(--indigo));
+    box-shadow:0 10px 28px rgba(106,99,209,.3); transition:.2s; display:flex; align-items:center; justify-content:center; gap:8px;}
+  .btn-primary:disabled{opacity:.5; cursor:not-allowed; box-shadow:none;}
+  .btn-primary:active:not(:disabled){transform:scale(.98);}
+  .btn-ghost{padding:10px 16px; border-radius:12px; border:1px solid rgba(10,46,42,.15); background:rgba(255,255,255,.5);
+    font-family:'Almarai'; font-weight:800; font-size:12.5px; cursor:pointer; color:var(--ink);}
+
+  .usage-note{display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; color:var(--ink-soft); margin-top:12px; font-weight:700;}
+  .usage-note b{color:var(--teal-deep);}
+  .progress-wrap{margin-top:14px;}
+  .progress-track{height:8px; border-radius:6px; background:rgba(10,46,42,.08); overflow:hidden;}
+  .progress-fill{height:100%; border-radius:6px; background:linear-gradient(90deg, var(--teal), var(--indigo)); width:0%; transition:width .4s ease;}
+  .progress-label{font-size:12px; color:var(--ink-soft); margin-top:8px; text-align:center; font-weight:700;}
+
+  .paywall{text-align:center; padding:8px 4px 4px;}
+  .paywall .lock{width:52px; height:52px; border-radius:16px; margin:0 auto 14px; background:linear-gradient(135deg, var(--gold), var(--gold-deep));
+    display:flex; align-items:center; justify-content:center; box-shadow:0 10px 26px rgba(212,162,76,.4);}
+  .paywall .lock svg{width:26px; height:26px;}
+  .paywall h2{font-family:'Cairo'; font-weight:900; font-size:18px; margin:0 0 8px;}
+  .paywall p{color:var(--ink-soft); font-size:13px; line-height:1.9; margin:0 0 20px;}
+  .plans{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;}
+  .plan{border-radius:var(--radius-md); padding:18px 14px; background:rgba(255,255,255,.55); border:1.5px solid rgba(10,46,42,.1); text-align:center; position:relative;}
+  .plan.best{border-color:var(--gold); background:linear-gradient(160deg, rgba(212,162,76,.14), rgba(255,255,255,.6));}
+  .plan .badge{position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:var(--gold); color:#fff; font-size:10px; font-weight:800; padding:3px 10px; border-radius:100px; font-family:'Cairo';}
+  .plan .p-name{font-family:'Cairo'; font-weight:800; font-size:13.5px; color:var(--ink-soft); margin-bottom:6px;}
+  .plan .p-price{font-family:'Cairo'; font-weight:900; font-size:26px; color:var(--ink);}
+  .plan .p-price span{font-size:12px; font-weight:700; color:var(--ink-soft);}
+  .plan .p-note{font-size:10.5px; color:var(--ink-soft); margin-top:4px;}
+  .redeem-row{display:flex; gap:8px; margin-top:6px;}
+  .redeem-row input{flex:1; padding:12px 14px; border-radius:13px; border:1px solid rgba(10,46,42,.15); font-family:'Cairo'; font-weight:800; font-size:14px; letter-spacing:1px; text-align:center; background:rgba(255,255,255,.7);}
+  .redeem-row button{padding:12px 18px; border-radius:13px; border:none; background:var(--ink); color:#fff; font-weight:800; font-family:'Cairo'; cursor:pointer; font-size:12.5px;}
+  .telegram-cta{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:16px; padding:13px; border-radius:14px;
+    background:linear-gradient(135deg,#29a9e0,#1b8fc4); color:#fff; text-decoration:none; font-weight:800; font-size:13.5px; font-family:'Cairo';
+    box-shadow:0 10px 24px rgba(41,169,224,.32);}
+
+  .quiz-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+  .quiz-title{font-family:'Cairo'; font-weight:800; font-size:17px;}
+  .quiz-meta{font-size:12px; color:var(--ink-soft); font-weight:700;}
+  .live-score{font-family:'Cairo'; font-weight:900; font-size:14px; color:var(--teal-deep); background:rgba(13,148,136,.1); padding:6px 14px; border-radius:100px;}
+  .qcard{border-radius:var(--radius-md); background:rgba(255,255,255,.62); border:1px solid rgba(10,46,42,.08); padding:18px; margin-bottom:14px; box-shadow:0 4px 16px rgba(10,46,42,.06); transition:.2s;}
+  .qcard.answered-correct{border-color:rgba(30,158,110,.4);}
+  .qcard.answered-wrong{border-color:rgba(221,95,124,.4);}
+  .qnum{display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:9px; background:rgba(13,148,136,.14); color:var(--teal-deep); font-family:'Cairo'; font-weight:800; font-size:12.5px; margin-left:8px;}
+  .qstem{font-weight:800; font-size:15px; line-height:1.85; margin:9px 0 14px;}
+  .opt{display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:var(--radius-sm); margin-bottom:8px; border:1px solid rgba(10,46,42,.12); background:rgba(255,255,255,.5); cursor:pointer; font-size:13.5px; transition:.15s;}
+  .opt:hover{border-color:rgba(13,148,136,.4);}
+  .opt.selected{border-color:var(--teal); background:rgba(13,148,136,.1);}
+  .opt.correct{border-color:var(--green); background:rgba(30,158,110,.14);}
+  .opt.wrong{border-color:var(--rose); background:rgba(221,95,124,.14);}
+  .opt.locked{cursor:default;}
+  .opt .bullet{width:21px; height:21px; border-radius:50%; border:1.6px solid rgba(10,46,42,.25); flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:#fff; font-family:'Cairo';}
+  .opt.selected .bullet{background:var(--teal); border-color:var(--teal);}
+  .opt.correct .bullet{background:var(--green); border-color:var(--green);}
+  .opt.wrong .bullet{background:var(--rose); border-color:var(--rose);}
+  .explain{margin-top:10px; padding:11px 13px; border-radius:var(--radius-sm); font-size:12.5px; line-height:1.85; display:none;}
+  .explain.show{display:block;}
+  .explain.ok{background:rgba(30,158,110,.1); border:1px solid rgba(30,158,110,.3); color:#0f6b45;}
+  .explain.no{background:rgba(221,95,124,.1); border:1px solid rgba(221,95,124,.3); color:#93233e;}
+  .score-card{text-align:center; padding:30px 20px;}
+  .score-num{font-family:'Cairo'; font-weight:900; font-size:44px; background:linear-gradient(90deg,var(--teal-deep),var(--indigo)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .score-label{color:var(--ink-soft); font-size:13px; margin-top:4px; font-weight:700;}
+  .quiz-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+  .quiz-actions .btn-ghost{flex:1; min-width:110px; text-align:center;}
+
+  .saved-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-radius:var(--radius-sm);
+    background:rgba(255,255,255,.5); border:1px solid rgba(10,46,42,.08); margin-bottom:10px; cursor:pointer; transition:.15s;}
+  .saved-item:hover{border-color:rgba(13,148,136,.4);}
+  .saved-item .si-title{font-weight:800; font-size:13.5px; font-family:'Cairo';}
+  .saved-item .si-meta{font-size:11px; color:var(--ink-soft); margin-top:2px; font-weight:700;}
+  .saved-item .si-del{background:none; border:none; color:var(--rose); font-size:16px; cursor:pointer; padding:4px;}
+  .empty-note{color:var(--ink-soft); font-size:12.5px; text-align:center; padding:14px 0;}
+
+  .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff;
+    padding:11px 20px; border-radius:14px; font-size:13px; opacity:0; transition:.3s; pointer-events:none; z-index:80;
+    box-shadow:var(--shadow-lg); max-width:88%; text-align:center; font-weight:700;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .spinner{width:16px; height:16px; border-radius:50%; border:2.4px solid rgba(255,255,255,.4); border-top-color:#fff; animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .hidden{display:none !important;}
+  footer{text-align:center; color:var(--ink-soft); font-size:11px; margin-top:26px; opacity:.75; font-weight:700;}
+  footer .adm{opacity:.35; cursor:default; user-select:none;}
+
+  .modal-bg{position:fixed; inset:0; background:rgba(10,46,42,.45); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal{background:#fff; border-radius:var(--radius-lg); padding:22px; max-width:380px; width:100%; box-shadow:var(--shadow-lg); max-height:90vh; overflow:auto;}
+  .modal h3{font-family:'Cairo'; font-weight:800; font-size:15.5px; margin:0 0 12px;}
+  .modal input, .modal select{width:100%; padding:11px 13px; border-radius:12px; border:1px solid rgba(10,46,42,.15); font-family:'Almarai'; font-size:13.5px; margin-bottom:10px; background:#fafafa;}
+  .modal .code-out{font-family:'Cairo'; font-weight:900; font-size:17px; text-align:center; padding:14px; background:rgba(13,148,136,.08); border-radius:12px; letter-spacing:1px; margin-bottom:10px; word-break:break-all;}
+  .modal-switch{text-align:center; font-size:12.5px; color:var(--ink-soft); margin-top:4px;}
+  .modal-switch a{color:var(--teal-deep); font-weight:800; cursor:pointer;}
+  .modal-error{color:var(--rose); font-size:12px; margin:-4px 0 10px; font-weight:700; display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div><div class="brand-name">QMRS<b>mcq</b></div><div class="brand-sub">اختبارات وزارية من ملفك</div></div>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <span class="status-dot"></span><span id="statusPillText">تسجيل الدخول</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-badge">✨ توليد اختبارات بأسلوب الامتحان الوزاري بالضبط</div>
+    <h1>ملفك الدراسي يتحوّل إلى <span>اختبار وزاري حقيقي</span></h1>
+    <p>ارفع محاضرة أو ملزمة PDF، وسيقوم QMRSmcq بصياغة أسئلة اختيار من متعدد بنفس فكرة وأسلوب أسئلة الامتحانات الوزارية لكليات الطب والصيدلة وطب الأسنان — مستخرجة حصرًا من ملفك، بلا أي تكرار، مع توضيح فوري للإجابة الصحيحة عند الخطأ.</p>
+    <div class="pulse"><svg viewBox="0 0 400 40" preserveAspectRatio="none"><defs><linearGradient id="pulseGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#6a63d1"/></linearGradient></defs><path d="M0 20 L60 20 L75 5 L90 35 L105 20 L140 20 L155 10 L170 30 L185 20 L400 20"/></svg></div>
+  </section>
+
+  <div class="card">
+    <h2><span class="step-badge">١</span>ارفع الملف أو الصق النص</h2>
+    <p class="hint">يدعم ملفات PDF وTXT، أو الصق النص مباشرة.</p>
+    <div class="drop" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div class="t1">اضغط لرفع ملف أو اسحبه هنا</div>
+      <div class="t2">PDF أو TXT — حتى 25 ميغابايت</div>
+      <input type="file" id="fileInput" accept=".pdf,.txt">
+    </div>
+    <div id="filePillWrap"></div>
+    <div class="or-divider">أو</div>
+    <textarea class="pastebox" id="pasteText" placeholder="الصق نص المحاضرة أو الملزمة هنا..."></textarea>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-badge">٢</span>عدد الأسئلة</h2>
+    <p class="hint">اختر عدد أسئلة الاختبار الذي تريد توليده.</p>
+    <div class="count-row" id="countRow">
+      <div class="count-chip" data-n="10">10</div>
+      <div class="count-chip active" data-n="20">20</div>
+      <div class="count-chip" data-n="30">30</div>
+      <div class="count-chip" data-n="40">40</div>
+      <div class="count-chip" data-n="50">50</div>
+    </div>
+  </div>
+
+  <div class="card" id="generateCard">
+    <h2><span class="step-badge">٣</span>توليد الاختبار</h2>
+    <p class="hint">سيتم تحليل الملف وصياغة أسئلة بنفس نمط الأسئلة الوزارية، من محتوى ملفك فقط.</p>
+    <button class="btn-primary" id="btnGenerate"><span id="genBtnText">✨ ولّد الأسئلة</span></button>
+    <div class="usage-note" id="usageNote"></div>
+    <div class="progress-wrap hidden" id="progressWrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">جاري التحليل...</div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="paywallCard">
+    <div class="paywall">
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <h2>انتهت محاولاتك المجانية</h2>
+      <p>استخدمت 5 محاولات توليد مجانية. اشترك للاستمرار بلا حدود، أو فعّل اشتراكك بكود تفعيل إن كان لديك.</p>
+      <div class="plans">
+        <div class="plan"><div class="p-name">شهري</div><div class="p-price">$5<span>/شهر</span></div><div class="p-note">توليد بلا حدود</div></div>
+        <div class="plan best"><div class="badge">الأوفر</div><div class="p-name">سنوي</div><div class="p-price">$20<span>/سنة</span></div><div class="p-note">توفير أكثر من 65%</div></div>
+      </div>
+      <div class="redeem-row"><input type="text" id="codeInput" placeholder="أدخل كود التفعيل" autocomplete="off"><button id="btnRedeem">تفعيل</button></div>
+      <a class="telegram-cta" href="https://t.me/ID29i" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M9.04 15.54l-.38 5.32c.54 0 .78-.23 1.06-.51l2.55-2.44 5.28 3.86c.97.54 1.66.26 1.92-.9L23.9 3.9c.36-1.42-.5-1.98-1.44-1.63L1.1 10.1c-1.4.55-1.38 1.32-.24 1.67l5.6 1.75L19.6 5.7c.6-.4 1.15-.18.7.23"/></svg>
+        للاشتراك أو الاستفسار راسلنا على تيليجرام
+      </a>
+    </div>
+  </div>
+
+  <div id="quizSection" class="hidden"></div>
+
+  <div class="card hidden" id="savedCard">
+    <h2>📂 اختباراتي المحفوظة</h2>
+    <p class="hint">اختباراتك مرتبطة بحسابك — يمكنك فتحها من أي جهاز بعد تسجيل الدخول.</p>
+    <div id="savedList"></div>
+  </div>
+
+  <footer>QMRSmcq — منصة تحويل المحتوى الدراسي إلى اختبارات وزارية ذكية<br><span class="adm" id="adminTrigger" onclick="adminTap()">·</span></footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =====================================================================
+// CONFIG — عدّل هذا القسم بعد إنشاء مشروع Firebase و Cloudflare Worker
+// =====================================================================
+const FIREBASE_CONFIG = {
+  apiKey: "PASTE_FIREBASE_API_KEY",
+  authDomain: "PASTE_PROJECT.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+const WORKER_URL = "https://delicate-sunset-b1d8.appsmr32.workers.dev"; // بدون / في النهاية
+const ADMIN_PASSWORD = "qmrs2026"; // غيّرها قبل النشر
+const CODE_SALT = "QMRSMCQ-SECRET-SALT-2026"; // يجب أن يطابق CODE_SALT في الـ Worker
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+// Handle the result of a Google redirect sign-in (fires once on page load after redirect back)
+auth.getRedirectResult().then((result)=>{
+  if(result && result.user){ toast('✅ تم تسجيل الدخول عبر Google'); }
+}).catch((e)=>{
+  if(e && e.code && e.code !== 'auth/no-current-user') console.error('Google redirect error', e);
+});
+
+async function signInWithGoogle(){
+  try{
+    await auth.signInWithRedirect(googleProvider); // redirect works reliably on mobile browsers, unlike popups
+  }catch(e){
+    console.error(e);
+    toast('تعذّر بدء تسجيل الدخول عبر Google');
+  }
+}
+
+const $ = (sel) => document.querySelector(sel);
+const toastEl = $('#toast');
+function toast(msg, ms=2800){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'), ms); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- Auth state ----------
+let currentUser = null;
+let accountInfo = { attemptsUsed:0, subscription:null, freeLimit:5 };
+
+auth.onAuthStateChanged(async (user)=>{
+  currentUser = user;
+  if(user){
+    await refreshAccountInfo();
+    refreshSavedList();
+  } else {
+    accountInfo = { attemptsUsed:0, subscription:null, freeLimit:5 };
+    refreshStatusUI();
+  }
+});
+
+function isSubActive(sub){
+  if(!sub) return false;
+  if(sub.expiresAt === null || sub.expiresAt === undefined) return true;
+  return new Date(sub.expiresAt).getTime() > Date.now();
+}
+
+async function refreshAccountInfo(){
+  if(!currentUser) return;
+  try{
+    const idToken = await currentUser.getIdToken();
+    const res = await fetch(WORKER_URL + '/me', { headers:{Authorization:'Bearer '+idToken} });
+    if(res.ok) accountInfo = await res.json();
+  }catch(e){ console.error(e); }
+  refreshStatusUI();
+}
+
+function refreshStatusUI(){
+  const pill = $('#statusPill');
+  const text = $('#statusPillText');
+  const usageNote = $('#usageNote');
+  if(!currentUser){
+    pill.classList.remove('pro');
+    text.textContent = 'تسجيل الدخول';
+    usageNote.innerHTML = 'سجّل الدخول لبدء توليد الأسئلة';
+    return;
+  }
+  const active = isSubActive(accountInfo.subscription);
+  if(active){
+    pill.classList.add('pro');
+    const t = accountInfo.subscription.tier;
+    text.textContent = '⭐ ' + (t==='F' ? 'اشتراك مفعّل' : (t==='Y' ? 'مشترك سنوي' : 'مشترك شهري'));
+    usageNote.innerHTML = '';
+  } else {
+    pill.classList.remove('pro');
+    text.textContent = '📂 ' + (currentUser.email ? currentUser.email.split('@')[0] : 'حسابي');
+    const remaining = Math.max(0, (accountInfo.freeLimit||5) - (accountInfo.attemptsUsed||0));
+    usageNote.innerHTML = `لديك <b>${remaining}</b> من ${accountInfo.freeLimit||5} محاولات مجانية متبقية`;
+  }
+}
+
+$('#statusPill').addEventListener('click', ()=>{
+  if(!currentUser){ openAuthModal('login'); }
+  else { $('#savedCard').classList.toggle('hidden'); refreshSavedList(); }
+});
+
+// ---------- Auth modal ----------
+function openAuthModal(mode){
+  const bg = document.createElement('div');
+  bg.className='modal-bg';
+  const isLogin = mode==='login';
+  bg.innerHTML = `<div class="modal">
+    <h3>${isLogin ? '🔐 تسجيل الدخول' : '✨ إنشاء حساب جديد'}</h3>
+    <button class="btn-primary" id="googleSignInBtn" style="background:#fff; color:#3c4043; border:1.5px solid rgba(10,46,42,.15); box-shadow:none; margin-bottom:14px;">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 7 29.6 5 24 5c-7.4 0-13.8 4.2-17.1 10.3z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5C29.6 35.3 26.9 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.9 39.6 16.4 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.5 5.5C41.5 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      متابعة عبر Google
+    </button>
+    <div class="or-divider">أو بالبريد الإلكتروني</div>
+    <div class="modal-error" id="authError"></div>
+    <input type="email" id="authEmail" placeholder="البريد الإلكتروني" autocomplete="email">
+    <input type="password" id="authPass" placeholder="كلمة المرور" autocomplete="${isLogin?'current-password':'new-password'}">
+    <button class="btn-primary" id="authSubmitBtn">${isLogin ? 'دخول' : 'إنشاء الحساب'}</button>
+    <div class="modal-switch">${isLogin ? 'ليس لديك حساب؟ <a id="switchMode">أنشئ حسابًا</a>' : 'لديك حساب بالفعل؟ <a id="switchMode">سجّل الدخول</a>'}</div>
+  </div>`;
+  document.body.appendChild(bg);
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  $('#googleSignInBtn').addEventListener('click', signInWithGoogle);
+  $('#switchMode').addEventListener('click', ()=>{ bg.remove(); openAuthModal(isLogin?'signup':'login'); });
+  $('#authSubmitBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('authEmail').value.trim();
+    const pass = document.getElementById('authPass').value;
+    const errEl = document.getElementById('authError');
+    errEl.style.display='none';
+    if(!email || pass.length<6){ errEl.textContent='أدخل بريدًا صحيحًا وكلمة مرور 6 أحرف على الأقل'; errEl.style.display='block'; return; }
+    try{
+      if(isLogin) await auth.signInWithEmailAndPassword(email, pass);
+      else await auth.createUserWithEmailAndPassword(email, pass);
+      bg.remove();
+      toast(isLogin ? '✅ تم تسجيل الدخول' : '✅ تم إنشاء الحساب');
+    }catch(e){
+      errEl.textContent = translateAuthError(e.code);
+      errEl.style.display='block';
+    }
+  });
+}
+function translateAuthError(code){
+  const map = {
+    'auth/email-already-in-use':'هذا البريد مستخدم بالفعل',
+    'auth/invalid-email':'صيغة البريد غير صحيحة',
+    'auth/weak-password':'كلمة المرور ضعيفة جدًا',
+    'auth/user-not-found':'لا يوجد حساب بهذا البريد',
+    'auth/wrong-password':'كلمة المرور غير صحيحة',
+    'auth/invalid-credential':'البريد أو كلمة المرور غير صحيحة',
+  };
+  return map[code] || 'حدث خطأ، حاول مجددًا';
+}
+
+// ---------- Redeem code ----------
+$('#btnRedeem').addEventListener('click', redeemCode);
+$('#codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') redeemCode(); });
+async function redeemCode(){
+  if(!currentUser){ toast('سجّل الدخول أولًا'); openAuthModal('login'); return; }
+  const code = $('#codeInput').value.trim();
+  if(!code){ toast('أدخل الكود أولًا'); return; }
+  try{
+    const idToken = await currentUser.getIdToken();
+    const res = await fetch(WORKER_URL + '/redeem', {
+      method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+idToken},
+      body: JSON.stringify({code})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      const msgs = { invalid_code:'❌ الكود غير صحيح', code_already_used:'⚠️ هذا الكود مُستخدم مسبقًا' };
+      toast(msgs[data.error] || 'تعذّر تفعيل الكود'); return;
+    }
+    $('#codeInput').value='';
+    $('#paywallCard').classList.add('hidden');
+    await refreshAccountInfo();
+    toast('✅ تم تفعيل الاشتراك بنجاح!');
+  }catch(e){ console.error(e); toast('حدث خطأ، حاول مجددًا'); }
+}
+
+// ---------- Admin code generator (client-side, deterministic) ----------
+let adminTaps = 0;
+function adminTap(){
+  adminTaps++; clearTimeout(window._at); window._at=setTimeout(()=>adminTaps=0, 1500);
+  if(adminTaps>=5){ adminTaps=0; openAdminLogin(); }
+}
+function openAdminLogin(){
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal"><h3>🔐 دخول الأدمن</h3><input type="password" id="adminPass" placeholder="كلمة المرور"><button class="btn-primary" id="adminLoginBtn">دخول</button></div>`;
+  document.body.appendChild(bg);
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  $('#adminLoginBtn').addEventListener('click', ()=>{
+    if(document.getElementById('adminPass').value === ADMIN_PASSWORD){ bg.remove(); openAdminGenerator(); }
+    else toast('كلمة مرور خاطئة');
+  });
+}
+function computeCheck(tier, rand){
+  const s = tier+rand+CODE_SALT; let sum=0;
+  for(const c of s) sum=(sum*31+c.charCodeAt(0))%1369;
+  return sum.toString(36).toUpperCase().padStart(2,'0').slice(0,2);
+}
+function genRand(len){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r=''; for(let i=0;i<len;i++) r+=chars[Math.floor(Math.random()*chars.length)]; return r; }
+function generateCode(tier){ const rand=genRand(6); return `QMRS-${tier}${rand}-${computeCheck(tier,rand)}`; }
+function openAdminGenerator(){
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal"><h3>🎟️ توليد كود تفعيل</h3>
+    <select id="tierSelect"><option value="M">اشتراك شهري ($5)</option><option value="Y">اشتراك سنوي ($20)</option><option value="F">تفعيل مجاني دائم</option></select>
+    <button class="btn-primary" id="genCodeBtn">توليد الكود</button><div id="codeOutWrap"></div></div>`;
+  document.body.appendChild(bg);
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  $('#genCodeBtn').addEventListener('click', ()=>{
+    const tier = document.getElementById('tierSelect').value;
+    const code = generateCode(tier);
+    document.getElementById('codeOutWrap').innerHTML = `<div class="code-out">${code}</div>
+      <button class="btn-ghost" style="width:100%;" onclick="navigator.clipboard.writeText('${code}'); toast('📋 تم نسخ الكود')">نسخ الكود</button>
+      <p style="font-size:11px;color:var(--ink-soft);margin-top:10px;line-height:1.7;">أرسل هذا الكود للمشترك عبر تيليجرام ليدخله في خانة "كود التفعيل" — يعمل مرة واحدة فقط بعد ربطه بالسيرفر.</p>`;
+  });
+}
+
+// ---------- File upload ----------
+const dropZone=$('#dropZone'), fileInput=$('#fileInput'), filePillWrap=$('#filePillWrap'), pasteText=$('#pasteText');
+let extractedText = "";
+dropZone.addEventListener('click', ()=>fileInput.click());
+dropZone.addEventListener('dragover', e=>{e.preventDefault(); dropZone.classList.add('drag');});
+dropZone.addEventListener('dragleave', ()=>dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e=>{e.preventDefault(); dropZone.classList.remove('drag'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
+fileInput.addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+async function handleFile(file){
+  const isPdf=file.name.toLowerCase().endsWith('.pdf'), isTxt=file.name.toLowerCase().endsWith('.txt');
+  if(!isPdf && !isTxt){ toast('الرجاء رفع ملف PDF أو TXT فقط'); return; }
+  if(file.size > 25*1024*1024){ toast('حجم الملف كبير جدًا (الحد الأقصى 25 ميغابايت)'); return; }
+  filePillWrap.innerHTML = `<div class="filepill"><span>⏳ جاري قراءة: ${escapeHtml(file.name)}</span></div>`;
+  try{
+    const text = isPdf ? await extractPdfText(file) : await file.text();
+    extractedText = text.trim(); pasteText.value="";
+    if(extractedText.length<30) filePillWrap.innerHTML = `<div class="filepill"><span>⚠️ لم يتم استخراج نص كافٍ</span><button onclick="clearFile()">إزالة</button></div>`;
+    else filePillWrap.innerHTML = `<div class="filepill"><span>📄 ${escapeHtml(file.name)} — ${extractedText.length.toLocaleString('ar')} حرف</span><button onclick="clearFile()">إزالة</button></div>`;
+  }catch(err){ console.error(err); filePillWrap.innerHTML = `<div class="filepill"><span>❌ تعذّرت قراءة الملف</span><button onclick="clearFile()">إزالة</button></div>`; }
+}
+function clearFile(){ extractedText=""; filePillWrap.innerHTML=""; fileInput.value=""; }
+async function extractPdfText(file){
+  const buf=await file.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:buf}).promise; let full="";
+  const maxPages=Math.min(pdf.numPages,200);
+  for(let i=1;i<=maxPages;i++){ const page=await pdf.getPage(i); const content=await page.getTextContent(); full+=content.items.map(it=>it.str).join(' ')+"\n"; }
+  return full;
+}
+
+// ---------- Count selector ----------
+let selectedCount = 20;
+document.querySelectorAll('.count-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{ document.querySelectorAll('.count-chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); selectedCount=parseInt(chip.dataset.n,10); });
+});
+
+// ---------- Generation (via Worker) ----------
+const btnGenerate=$('#btnGenerate'), genBtnText=$('#genBtnText'), progressWrap=$('#progressWrap'), progressFill=$('#progressFill'), progressLabel=$('#progressLabel');
+let currentQuiz = null, answers = {};
+
+btnGenerate.addEventListener('click', async ()=>{
+  const sourceText = (extractedText || pasteText.value || "").trim();
+  if(sourceText.length < 30){ toast('الرجاء رفع ملف أو لصق نص كافٍ أولًا'); return; }
+  if(!currentUser){ openAuthModal('login'); return; }
+
+  await refreshAccountInfo();
+  if(!isSubActive(accountInfo.subscription) && accountInfo.attemptsUsed >= (accountInfo.freeLimit||5)){
+    $('#paywallCard').classList.remove('hidden');
+    $('#paywallCard').scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
+
+  btnGenerate.disabled = true;
+  genBtnText.innerHTML = `<span class="spinner"></span>&nbsp; جاري التوليد...`;
+  progressWrap.classList.remove('hidden');
+  progressFill.style.width='15%';
+  progressLabel.textContent='جاري تحليل الملف وتوليد الأسئلة...';
+
+  try{
+    const idToken = await currentUser.getIdToken();
+    const res = await fetch(WORKER_URL + '/generate', {
+      method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+idToken},
+      body: JSON.stringify({ text: sourceText, count: selectedCount })
+    });
+    progressFill.style.width='90%';
+    const data = await res.json();
+
+    if(res.status === 402){
+      $('#paywallCard').classList.remove('hidden');
+      $('#paywallCard').scrollIntoView({behavior:'smooth', block:'start'});
+      await refreshAccountInfo();
+      return;
+    }
+    if(!res.ok || !data.questions || data.questions.length===0){
+      toast('تعذّر توليد أسئلة، حاول مجددًا بملف أوضح'); return;
+    }
+
+    currentQuiz = { id:'quiz_'+Date.now(), title:guessTitle(sourceText), createdAt:new Date().toISOString(), questions:data.questions };
+    answers = {};
+    accountInfo.attemptsUsed = data.attemptsUsed;
+    refreshStatusUI();
+    renderQuiz(currentQuiz);
+    await autoSaveQuiz(currentQuiz);
+    progressFill.style.width='100%';
+    toast(`✅ تم توليد ${data.questions.length} سؤالًا بنجاح`);
+    document.getElementById('quizSection').scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(err){
+    console.error(err); toast('حدث خطأ أثناء التوليد، حاول مجددًا');
+  }finally{
+    btnGenerate.disabled=false; genBtnText.textContent='✨ ولّد الأسئلة'; progressWrap.classList.add('hidden');
+  }
+});
+
+function guessTitle(text){
+  const firstLine = text.split('\n').map(l=>l.trim()).find(l=>l.length>4 && l.length<70);
+  return firstLine ? firstLine.slice(0,60) : 'اختبار وزاري من ملف مرفوع';
+}
+
+// ---------- Quiz rendering (instant per-question feedback) ----------
+function renderQuiz(quiz){
+  const section=$('#quizSection'); section.classList.remove('hidden');
+  let html = `<div class="card"><div class="quiz-head">
+    <div><div class="quiz-title">📝 ${escapeHtml(quiz.title)}</div><div class="quiz-meta">${quiz.questions.length} سؤالًا · ${new Date(quiz.createdAt).toLocaleDateString('ar')}</div></div>
+    <div class="live-score" id="liveScore">0 / ${quiz.questions.length}</div></div>`;
+  quiz.questions.forEach((q,i)=>{
+    html += `<div class="qcard" data-qi="${i}"><div><span class="qnum">${i+1}</span></div><div class="qstem">${escapeHtml(q.stem)}</div>
+      <div class="options">${q.options.map((opt,oi)=>`<div class="opt" data-oi="${oi}" onclick="selectOption(${i}, ${oi})"><span class="bullet">${['أ','ب','ج','د','هـ'][oi]||(oi+1)}</span><span>${escapeHtml(opt)}</span></div>`).join('')}</div>
+      <div class="explain" id="explain-${i}"></div></div>`;
+  });
+  html += `<div class="quiz-actions"><button class="btn-ghost" id="btnDownloadTxt">⬇️ تحميل كنص</button><button class="btn-ghost" id="btnDownloadJson">⬇️ تحميل JSON</button></div></div><div class="card hidden" id="scoreCard"></div>`;
+  section.innerHTML = html;
+  $('#btnDownloadTxt').addEventListener('click', ()=>downloadQuiz('txt'));
+  $('#btnDownloadJson').addEventListener('click', ()=>downloadQuiz('json'));
+}
+function selectOption(qIndex, optIndex){
+  if(answers[qIndex] !== undefined) return;
+  answers[qIndex] = optIndex;
+  const q = currentQuiz.questions[qIndex];
+  const qcard = document.querySelector(`.qcard[data-qi="${qIndex}"]`);
+  const isCorrect = optIndex === q.correctIndex;
+  qcard.querySelectorAll('.opt').forEach(o=>{
+    o.classList.add('locked');
+    const oi=parseInt(o.dataset.oi,10);
+    if(oi===optIndex) o.classList.add('selected');
+    if(oi===q.correctIndex) o.classList.add('correct');
+    else if(oi===optIndex && !isCorrect) o.classList.add('wrong');
+  });
+  const explain = document.getElementById(`explain-${qIndex}`);
+  if(isCorrect){
+    explain.className='explain show ok';
+    explain.innerHTML = `✅ إجابة صحيحة${q.explanation ? ' — '+escapeHtml(q.explanation) : ''}`;
+    qcard.classList.add('answered-correct');
+  } else {
+    explain.className='explain show no';
+    const correctLetter = ['أ','ب','ج','د','هـ'][q.correctIndex]||(q.correctIndex+1);
+    explain.innerHTML = `❌ إجابة خاطئة. الإجابة الصحيحة: (${correctLetter}) ${escapeHtml(q.options[q.correctIndex])}${q.explanation ? '<br>💡 '+escapeHtml(q.explanation) : ''}`;
+    qcard.classList.add('answered-wrong');
+  }
+  updateLiveScore();
+}
+function updateLiveScore(){
+  const total = currentQuiz.questions.length;
+  let correct=0; currentQuiz.questions.forEach((q,i)=>{ if(answers[i]===q.correctIndex) correct++; });
+  const liveScore=document.getElementById('liveScore'); if(liveScore) liveScore.textContent=`${correct} / ${total}`;
+  if(Object.keys(answers).length===total){
+    const pct=Math.round((correct/total)*100);
+    const scoreCard=$('#scoreCard'); scoreCard.classList.remove('hidden');
+    scoreCard.innerHTML = `<div class="score-card"><div class="score-num">${correct}/${total}</div><div class="score-label">نسبة الإجابات الصحيحة: ${pct}%</div></div>`;
+  }
+}
+
+// ---------- Download ----------
+function downloadQuiz(format){
+  if(!currentQuiz) return;
+  let blob, filename;
+  if(format==='json'){ blob=new Blob([JSON.stringify(currentQuiz,null,2)],{type:'application/json'}); filename=sanitizeFilename(currentQuiz.title)+'.json'; }
+  else{
+    let txt=`${currentQuiz.title}\n${'='.repeat(30)}\n\n`;
+    currentQuiz.questions.forEach((q,i)=>{
+      txt+=`${i+1}. ${q.stem}\n`;
+      q.options.forEach((o,oi)=>{ const letter=['أ','ب','ج','د','هـ'][oi]||(oi+1); txt+=`   ${letter}) ${o}${oi===q.correctIndex?' ✅':''}\n`; });
+      txt+=`   💡 ${q.explanation||''}\n\n`;
+    });
+    blob=new Blob([txt],{type:'text/plain;charset=utf-8'}); filename=sanitizeFilename(currentQuiz.title)+'.txt';
+  }
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function sanitizeFilename(s){ return (s||'quiz').replace(/[\\/:*?"<>|]/g,'').slice(0,50).trim() || 'quiz'; }
+
+// ---------- Saved exams (Firestore, per account) ----------
+async function autoSaveQuiz(quiz){
+  if(!currentUser) return;
+  try{
+    await db.collection('users').doc(currentUser.uid).collection('exams').doc(quiz.id).set(quiz);
+    refreshSavedList();
+  }catch(e){ console.error(e); }
+}
+async function refreshSavedList(){
+  const savedList = $('#savedList');
+  if(!currentUser){ savedList.innerHTML = `<div class="empty-note">سجّل الدخول لعرض اختباراتك المحفوظة</div>`; return; }
+  try{
+    const snap = await db.collection('users').doc(currentUser.uid).collection('exams').orderBy('createdAt','desc').limit(50).get();
+    if(snap.empty){ savedList.innerHTML = `<div class="empty-note">لا توجد اختبارات محفوظة بعد</div>`; return; }
+    let html='';
+    snap.forEach(doc=>{
+      const q = doc.data();
+      html += `<div class="saved-item" onclick="openSavedQuiz('${doc.id}')">
+        <div><div class="si-title">${escapeHtml(q.title)}</div><div class="si-meta">${q.questions.length} سؤالًا · ${new Date(q.createdAt).toLocaleDateString('ar')}</div></div>
+        <button class="si-del" onclick="event.stopPropagation(); deleteSavedQuiz('${doc.id}')">🗑️</button></div>`;
+    });
+    savedList.innerHTML = html;
+  }catch(e){ console.error(e); savedList.innerHTML = `<div class="empty-note">تعذّر تحميل الاختبارات المحفوظة</div>`; }
+}
+async function openSavedQuiz(id){
+  try{
+    const doc = await db.collection('users').doc(currentUser.uid).collection('exams').doc(id).get();
+    if(!doc.exists){ toast('تعذّر العثور على الاختبار'); return; }
+    currentQuiz = doc.data(); answers = {};
+    renderQuiz(currentQuiz);
+    document.getElementById('quizSection').scrollIntoView({behavior:'smooth', block:'start'});
+    toast('📂 تم فتح الاختبار المحفوظ');
+  }catch(e){ toast('تعذّر فتح الاختبار'); }
+}
+async function deleteSavedQuiz(id){
+  try{ await db.collection('users').doc(currentUser.uid).collection('exams').doc(id).delete(); refreshSavedList(); toast('🗑️ تم حذف الاختبار'); }
+  catch(e){ toast('تعذّر حذف الاختبار'); }
+}
+</script>
+</body>
+</html>
